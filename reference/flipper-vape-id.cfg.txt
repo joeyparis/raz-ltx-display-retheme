@@ -1,0 +1,18 @@
+# Debug-port identification only. No CPU target, flash driver, halt, or reset.
+adapter serial YOUR_DAP_SERIAL
+transport select swd
+adapter speed 100
+reset_config none
+gdb_port disabled
+tcl_port disabled
+telnet_port disabled
+
+swd newdap vape cpu -expected-id 0x0bb11477
+dap create vape.dap -chain-position vape.cpu
+init
+set vape_debug_id [vape.dap dpreg 0x0]
+if {$vape_debug_id != 0x0bb11477} {
+    error "Unexpected debug ID: $vape_debug_id"
+}
+echo "VAPE_DEBUG_ID_CONFIRMED: $vape_debug_id"
+shutdown

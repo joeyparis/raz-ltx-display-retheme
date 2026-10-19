@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="650" viewBox="0 0 1280 650" role="img" aria-labelledby="title desc">
+<title id="title">Flipper Zero to RAZ USB-C breakout, starting assignment</title>
+<desc id="desc">PA7 clock on socket 2 to B5, PA6 data on socket 3 to A5, grounds 8 and 11 to separate signal grounds. The Flipper connects to the computer. The breakout male plug connects directly to the vape; its female socket stays empty. Plug orientation must be established.</desc>
+<style>text{font-family:Arial,sans-serif;fill:#172c40} .heading{font-size:27px;font-weight:700} .label{font-size:22px} .small{font-size:18px} .bold{font-weight:700} .wire{fill:none;stroke-width:6;stroke-linecap:round} .port{fill:#fff;stroke:#9cabb9;stroke-width:2}</style>
+<rect width="1280" height="650" fill="#f5f8fb"/>
+<text x="45" y="48" class="heading">USB-C debug connection: Flipper DAP Link, PA7/PA6 mode</text>
+<text x="45" y="80" class="small">Starting signal assignment. Establish and mark the working vape-plug orientation.</text>
+<rect x="45" y="120" width="340" height="340" rx="20" fill="#fff1db" stroke="#dd9a30" stroke-width="2"/>
+<text x="70" y="162" class="heading">Flipper Zero</text>
+<text x="70" y="194" class="small">DAP Link / SWD / PA7-PA6</text>
+<text x="70" y="244" class="label bold">2 / A7: SWCLK</text>
+<text x="70" y="300" class="label bold">3 / A6: SWDIO</text>
+<text x="70" y="356" class="label bold">8 / GND</text>
+<text x="70" y="412" class="label bold">11 / GND</text>
+<rect x="70" y="473" width="285" height="54" rx="10" class="port"/>
+<text x="86" y="507" class="small">Flipper USB-C → computer</text>
+<path class="wire" stroke="#c36b10" d="M365 237 H645"/>
+<path class="wire" stroke="#cb3441" d="M365 293 H645"/>
+<path class="wire" stroke="#7a5236" d="M365 349 H645"/>
+<path class="wire" stroke="#506575" d="M365 405 H645"/>
+<text x="430" y="225" class="small">Orange / clock</text>
+<text x="430" y="281" class="small">Red / data</text>
+<text x="430" y="337" class="small">Brown / ground</text>
+<text x="430" y="393" class="small">Second ground</text>
+<rect x="645" y="120" width="350" height="340" rx="20" fill="#e9f4ec" stroke="#467c58" stroke-width="2"/>
+<text x="670" y="162" class="heading">USB-C breakout</text>
+<text x="670" y="194" class="small">Use printed pin labels</text>
+<text x="670" y="244" class="label bold">B5 / CC2</text>
+<text x="670" y="300" class="label bold">A5 / CC1</text>
+<text x="670" y="356" class="label bold">GND</text>
+<text x="670" y="412" class="label bold">Another GND</text>
+<rect x="1020" y="150" width="215" height="290" rx="20" fill="#e4e9f4" stroke="#657594" stroke-width="2"/>
+<text x="1075" y="195" class="heading">RAZ</text>
+<text x="1050" y="235" class="small">Own battery</text>
+<path d="M995 280 H1020" stroke="#506575" stroke-width="12"/>
+<text x="1039" y="285" class="small">Male plug</text>
+<text x="1039" y="311" class="small">directly in vape</text>
+<text x="1039" y="380" class="small">GV2025 / 0210V9</text>
+<text x="670" y="493" class="small">Female socket: leave empty</text>
+<text x="45" y="571" class="label bold">Leave VCC/VBUS, 3.3 V, 5 V and reset disconnected.</text>
+<text x="45" y="605" class="small">Disconnect before moving jumpers. A5/B5 may need exchanging with insertion orientation.</text>
+</svg>

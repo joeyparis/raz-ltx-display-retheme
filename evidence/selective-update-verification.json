@@ -1,0 +1,40 @@
+{
+  "scope": "Hardware-tested earlier custom theme; not the Epsilon artwork",
+  "installed_reference_sha256": "50f3ab970717de95936c0a57533d7574776d626c7a0ee3f82c846f336579f7c6",
+  "candidate_sha256": "96406fe8764c5eb595f31b467758db9fb63c7988168f340e1dfedcb0a2bedb17",
+  "changed_assets": [
+    "juice-normal-stage-1",
+    "juice-normal-stage-2",
+    "juice-normal-stage-3",
+    "juice-normal-stage-4",
+    "juice-normal-stage-5",
+    "juice-boost-stage-1",
+    "juice-boost-stage-2",
+    "juice-boost-stage-3",
+    "juice-boost-stage-4",
+    "juice-boost-stage-5"
+  ],
+  "changed_bytes": 1552,
+  "sectors": [
+    26,
+    27,
+    28,
+    29,
+    30,
+    31
+  ],
+  "sector_offsets": [
+    "0x01A000",
+    "0x01B000",
+    "0x01C000",
+    "0x01D000",
+    "0x01E000",
+    "0x01F000"
+  ],
+  "outside_liquid_assets_unchanged": true,
+  "outside_six_sectors_unchanged": true,
+  "live_verified_sectors": 6,
+  "recovery_events": 0,
+  "owner_confirmed_appearance_and_response": true,
+  "independent_post_flash_whole_chip_dump": false
+}

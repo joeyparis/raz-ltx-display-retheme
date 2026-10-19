@@ -1,0 +1,121 @@
+adapter serial YOUR_DAP_SERIAL
+transport select swd
+adapter speed 100
+reset_config none
+gdb_port disabled
+tcl_port disabled
+telnet_port disabled
+swd newdap vape cpu -expected-id 0x0bb11477
+dap create vape.dap -chain-position vape.cpu
+target create vape.cpu cortex_m -dap vape.dap
+
+proc read_register {name} {
+    set response [reg $name]
+    if {![regexp {0x[0-9a-fA-F]+} $response value]} {
+        error "Could not read register $name: $response"
+    }
+    return $value
+}
+
+proc read_word {address} {
+    set response [mdw $address 1]
+    if {![regexp {0x[0-9a-fA-F]+: ([0-9a-fA-F]+)} $response whole value]} {
+        error "Could not read memory at $address: $response"
+    }
+    return 0x$value
+}
+
+if {![info exists dump_start]} {set dump_start 0}
+if {![info exists dump_length]} {set dump_length 0x400000}
+if {![info exists chunk_size]} {set chunk_size 0xf00}
+if {![info exists chunk_dir]} {set chunk_dir /PATH/TO/PROJECT/work/graphics-chunks-full}
+if {![info exists ram_backup]} {set ram_backup /PATH/TO/PROJECT/work/graphics-ram-backup.bin}
+file mkdir $chunk_dir
+
+init
+bp 0x08001948 2 hw
+set breakpoint_failed [catch {wait_halt 12000} breakpoint_message]
+rbp 0x08001948
+if {$breakpoint_failed != 0} {
+    echo "FLASH_DUMP_NOT_STARTED $breakpoint_message"
+    shutdown
+}
+
+set registers {r0 r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 sp lr pc xPSR primask}
+set snapshot_failed [catch {
+    mww 0x40003000 0xaaaa
+    foreach name $registers {
+        set saved_register($name) [read_register $name]
+    }
+    set saved_return [read_word 0x20001f00]
+    dump_image $ram_backup 0x20001000 $chunk_size
+    mww 0x40003000 0xaaaa
+} snapshot_message]
+if {$snapshot_failed != 0} {
+    echo "FLASH_DUMP_NOT_STARTED $snapshot_message"
+    resume
+    shutdown
+}
+
+set dump_failed [catch {
+    mwh 0x20001f00 0xbe00
+    reg primask 1
+    for {set offset 0} {$offset < $dump_length} {incr offset $chunk_size} {
+        mww 0x40003000 0xaaaa
+        set address [expr {$dump_start + $offset}]
+        set count $chunk_size
+        if {$count > $dump_length - $offset} {
+            set count [expr {$dump_length - $offset}]
+        }
+        reg r0 0x20001000
+        reg r1 $address
+        reg r2 $count
+        reg lr 0x20001f01
+        reg pc 0x080074c8
+        resume
+        wait_halt 5000
+        set stopped_pc [read_register pc]
+        if {$stopped_pc != 0x20001f00} {
+            error "Unexpected stop address $stopped_pc at flash offset $address"
+        }
+        mww 0x40003000 0xaaaa
+        set chunk_file [format "%s/chunk_%06x.bin" $chunk_dir $address]
+        dump_image $chunk_file 0x20001000 $count
+        mww 0x40003000 0xaaaa
+        if {[file size $chunk_file] != $count} {
+            error "Incomplete chunk at flash offset $address"
+        }
+        if {$offset % 0x10000 == 0 || $offset + $count == $dump_length} {
+            echo [format "FLASH_DUMP_PROGRESS 0x%06x/%06x" [expr {$offset + $count}] $dump_length]
+        }
+    }
+} dump_message]
+
+if {$dump_failed != 0} {
+    echo "FLASH_DUMP_ERROR $dump_message"
+    catch {halt}
+    set current_pc [read_register pc]
+    if {$current_pc != 0x20001f00} {
+        echo "FLASH_DUMP_TARGET_RESET $current_pc"
+        catch {reset run}
+        shutdown
+    }
+}
+
+set restore_failed [catch {
+    mww 0x40003000 0xaaaa
+    load_image $ram_backup 0x20001000 bin
+    mww 0x40003000 0xaaaa
+    mww 0x20001f00 $saved_return
+    foreach name $registers {
+        reg $name $saved_register($name)
+    }
+} restore_message]
+if {$restore_failed != 0} {
+    echo "FLASH_DUMP_RESTORE_FAILED $restore_message"
+    catch {reset run}
+    shutdown
+}
+echo "CPU_RESTORED [reg pc]"
+resume
+shutdown

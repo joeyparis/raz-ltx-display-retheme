@@ -1,0 +1,24 @@
+{
+  "scope": "Initial hardware-tested custom theme; not the Epsilon artwork",
+  "publication_log_prefix": "Project-specific label normalized to THEME",
+  "device_version_screen": [
+    "GV2025",
+    "0210V9"
+  ],
+  "test_date": "2026-10-18",
+  "source_sha256": "9ecfcea7192b4ae4c13aeabde0dda018651fac7f3e5d66703650609f7277f46b",
+  "candidate_sha256": "50f3ab970717de95936c0a57533d7574776d626c7a0ee3f82c846f336579f7c6",
+  "mcu_capture_sha256": "b8e274b63656f470ace0fe106c618a9963ca91306b999c1be5bd872e39606b11",
+  "asset_count": 186,
+  "modified_bytes": 4072283,
+  "changed_sector_count": 998,
+  "journal_start_count": 998,
+  "journal_verified_count": 998,
+  "journal_matches_changed_sectors": true,
+  "journal_restore_count": 0,
+  "all_differences_within_mapped_assets": true,
+  "scratch_sector_erased_in_backup": true,
+  "last_sector_non_ff_bytes": 5,
+  "independent_post_flash_whole_chip_dump": false,
+  "post_flash_internal_firmware_dump": false
+}

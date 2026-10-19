@@ -1,0 +1,227 @@
+set library_only 1
+source /PATH/TO/PROJECT/work/flipper-vape-sector-loader-pilot.cfg
+unset library_only
+
+set scratch $root/work/theme-full-flash
+if {[info exists test_scratch_dir]} {set scratch $test_scratch_dir}
+set journal_file $scratch/journal.txt
+set candidate_file $root/outputs/theme-exact-replacements/theme-graphics-flash-offline-candidate.bin
+set backup_sha 9ecfcea7192b4ae4c13aeabde0dda018651fac7f3e5d66703650609f7277f46b
+set candidate_sha 50f3ab970717de95936c0a57533d7574776d626c7a0ee3f82c846f336579f7c6
+set journal_header "THEME_FULL_V1 $backup_sha $candidate_sha"
+if {![info exists max_writes]} {set max_writes 1}
+
+proc save_binary {path bytes} {
+    set channel [open $path wb]
+    puts -nonewline $channel $bytes
+    close $channel
+}
+
+proc log_flash {message} {
+    global journal_file
+    set channel [open $journal_file a]
+    puts $channel $message
+    close $channel
+    echo $message
+}
+
+if {![info exists run_full] || $run_full != 1} {
+    echo "THEME_FULL_DISABLED: set run_full 1 before loading this file"
+    shutdown
+}
+if {$max_writes < 1 || $max_writes > 1024} {error "max_writes must be 1..1024"}
+if {[file size $original_file] != 0x400000 || [file size $candidate_file] != 0x400000 ||
+    [file size $loader_file] != 528} {
+    error "Full-flash inputs have unexpected lengths"
+}
+if {[lindex [exec shasum -a 256 $original_file] 0] ne $backup_sha ||
+    [lindex [exec shasum -a 256 $candidate_file] 0] ne $candidate_sha} {
+    error "Backup or candidate hash differs from the approved build"
+}
+file mkdir $scratch
+set previous -1
+set pending -1
+if {[file exists $journal_file]} {
+    set lines [split [load_binary $journal_file] "\n"]
+    if {[lindex $lines 0] ne $journal_header} {error "Journal belongs to a different image"}
+    foreach line [lrange $lines 1 end] {
+        if {[regexp {^START ([0-9]+)$} $line whole index]} {
+            set pending $index
+        } elseif {[regexp {^VERIFIED ([0-9]+)$} $line whole index]} {
+            set previous $index
+            set pending -1
+        } elseif {[regexp {^RESTORED ([0-9]+)$} $line whole index]} {
+            set pending -1
+        } elseif {$line ne ""} {
+            error "Unrecognized journal line: $line"
+        }
+    }
+} else {
+    set channel [open $journal_file w]
+    puts $channel $journal_header
+    close $channel
+}
+set next_index [expr {$pending >= 0 ? $pending : $previous + 1}]
+if {$next_index < 0 || $next_index > 1024} {error "Invalid journal position"}
+set backup [open $original_file rb]
+set candidate [open $candidate_file rb]
+seek $backup 0x3f0000 start
+set scratch_original [read $backup 0x1000]
+if {$scratch_original ne [load_binary $erased_file]} {error "Recovery scratch sector changed"}
+if {[info exists preflight_only] && $preflight_only == 1} {
+    echo "THEME_FULL_FILE_PREFLIGHT_OK next_index=$next_index max_writes=$max_writes"
+    close $backup
+    close $candidate
+    shutdown
+}
+
+init
+bp 0x08001948 2 hw
+set connect_failed [catch {wait_halt 12000} connect_message]
+rbp 0x08001948
+if {$connect_failed != 0} {
+    echo "THEME_FULL_NOT_STARTED $connect_message"
+    close $backup
+    close $candidate
+    shutdown
+}
+
+set registers {r0 r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 sp lr pc xPSR primask}
+set snapshot_ready 0
+set snapshot_failed [catch {
+    foreach name $registers {set saved_register($name) [read_register $name]}
+    mww 0x40003000 0xaaaa
+    dump_image $scratch/ram-low.bin 0x20000000 0x1000
+    mww 0x40003000 0xaaaa
+    dump_image $scratch/ram-high.bin 0x20001000 0x1000
+    mww 0x40003000 0xaaaa
+    set snapshot_ready 1
+    mwh 0x20000ff0 0xbe00
+    reg primask 1
+    set live_scratch [read_sector 0x3f0000 preflight_scratch]
+    if {$live_scratch ne $scratch_original} {error "Live scratch sector differs from backup"}
+    if {[flash_command 0x9f 3] ne {133 96 22} ||
+        [flash_status 0x05] != 0 || [flash_status 0x35] != 0 ||
+        [flash_status 0x15] != 0x20} {
+        error "Graphics flash ID, status, or configuration changed"
+    }
+    echo "THEME_FULL_DEVICE_PREFLIGHT_OK"
+} snapshot_message]
+if {$snapshot_failed != 0} {
+    echo "THEME_FULL_NOT_STARTED $snapshot_message"
+    if {$snapshot_ready != 0} {
+        catch {
+            load_image $scratch/ram-low.bin 0x20000000 bin
+            mww 0x40003000 0xaaaa
+            load_image $scratch/ram-high.bin 0x20001000 bin
+            foreach name $registers {reg $name $saved_register($name)}
+        }
+    }
+    catch {resume}
+    close $backup
+    close $candidate
+    shutdown
+}
+
+set writes 0
+set active_index -1
+set completed 1
+set run_failed [catch {
+    for {set index $next_index} {$index < 1024} {incr index} {
+        mww 0x40003000 0xaaaa
+        set sector [expr {$index * 0x1000}]
+        seek $backup $sector start
+        seek $candidate $sector start
+        set original [read $backup 0x1000]
+        set desired [read $candidate 0x1000]
+        if {[string length $original] != 0x1000 || [string length $desired] != 0x1000} {
+            error "Incomplete input at sector $index"
+        }
+        if {$original eq $desired} {continue}
+        set live [read_sector $sector before]
+        if {$live eq $desired} {
+            log_flash "VERIFIED $index"
+            continue
+        }
+        if {$live ne $original} {
+            if {$pending != $index} {error "Unknown live bytes at sector $index"}
+            save_binary $scratch/stage-original.bin $original
+            set active_index $index
+            set deadline [expr {[clock milliseconds] + 30000}]
+            while {([flash_status 0x05] & 1) != 0} {
+                if {[clock milliseconds] >= $deadline} {error "Flash stayed busy at sector $index"}
+            }
+            flash_command 0x04 0
+            run_loader $scratch/stage-original.bin
+            if {[read_sector $sector recovered] ne $original} {
+                error "Could not restore interrupted sector $index"
+            }
+            log_flash "RESTORED $index"
+            set active_index -1
+        }
+        save_binary $scratch/stage-original.bin $original
+        save_binary $scratch/stage-target.bin $desired
+        log_flash "START $index"
+        set active_index $index
+        run_loader $scratch/stage-target.bin
+        if {[read_sector $sector programmed] ne $desired} {
+            error "Program readback mismatch at sector $index"
+        }
+        if {[flash_status 0x05] != 0 || ([flash_status 0x35] & 4) != 0} {
+            error "Graphics flash reports program/erase failure at sector $index"
+        }
+        log_flash "VERIFIED $index"
+        set active_index -1
+        set pending -1
+        incr writes
+        if {$writes >= $max_writes} {
+            set completed 0
+            break
+        }
+    }
+} run_message]
+
+set recovery_failed 0
+if {$run_failed != 0 && $active_index >= 0} {
+    set recovery_failed [catch {
+        catch {halt}
+        set deadline [expr {[clock milliseconds] + 30000}]
+        while {([flash_status 0x05] & 1) != 0} {
+            if {[clock milliseconds] >= $deadline} {error "Flash stayed busy during recovery"}
+        }
+        flash_command 0x04 0
+        seek $backup $sector start
+        set original [read $backup 0x1000]
+        save_binary $scratch/stage-original.bin $original
+        run_loader $scratch/stage-original.bin
+        if {[read_sector $sector restored] ne $original} {
+            error "Recovery readback mismatch at sector $active_index"
+        }
+        log_flash "RESTORED $active_index"
+    } recovery_message]
+}
+
+set ram_restore_failed [catch {
+    mww 0x40003000 0xaaaa
+    load_image $scratch/ram-low.bin 0x20000000 bin
+    mww 0x40003000 0xaaaa
+    load_image $scratch/ram-high.bin 0x20001000 bin
+    mww 0x40003000 0xaaaa
+    foreach name $registers {reg $name $saved_register($name)}
+} ram_restore_message]
+close $backup
+close $candidate
+if {$recovery_failed != 0} {echo "THEME_FULL_RECOVERY_ERROR $recovery_message"}
+if {$ram_restore_failed != 0} {
+    echo "THEME_FULL_RAM_RESTORE_ERROR $ram_restore_message"
+    catch {reset run}
+    error "MCU RAM or registers could not be restored"
+}
+resume
+if {$run_failed != 0} {error "THEME_FULL_ERROR $run_message"}
+if {$completed != 0} {
+    echo "THEME_FULL_COMPLETE writes=$writes"
+} else {
+    echo "THEME_FULL_BATCH_COMPLETE writes=$writes"
+}
+shutdown

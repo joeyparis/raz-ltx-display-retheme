@@ -1,0 +1,15 @@
+RAZ LTX 0210V9 external graphics SPI NOR identification, read-only, 2026-10-18
+JEDEC RDID (0x9F): 85 60 16
+SFDP RDSFDP (0x5A), 128 bytes:
+00: 53 46 44 50 00 01 01 ff 00 00 01 09 30 00 00 ff
+10: 85 00 01 03 60 00 00 ff ff ff ff ff ff ff ff ff
+20: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+30: e5 20 f9 ff ff ff ff 01 44 eb 08 6b 08 3b 80 bb
+40: fe ff ff ff ff ff 00 ff ff ff 44 eb 0c 20 0f 52
+50: 10 d8 08 81 ff ff ff ff ff ff ff ff ff ff ff ff
+60: 00 36 00 23 9e f9 77 64 d9 e8 ff ff ff ff ff ff
+70: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+
+Matches the P25Q32SH family table in Puya's datasheet: 32 Mbit, SFDP
+byte 0x32 = F9, voltage bytes 0x60-0x63 = 00 36 00 23. The chip's
+physical package and full ordering suffix cannot be read through these IDs.

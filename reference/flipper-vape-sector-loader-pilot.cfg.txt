@@ -1,0 +1,258 @@
+adapter serial YOUR_DAP_SERIAL
+transport select swd
+adapter speed 100
+reset_config none
+gdb_port disabled
+tcl_port disabled
+telnet_port disabled
+swd newdap vape cpu -expected-id 0x0bb11477
+dap create vape.dap -chain-position vape.cpu
+target create vape.cpu cortex_m -dap vape.dap
+
+set root /PATH/TO/PROJECT
+set scratch $root/work/sector-loader-pilot
+set original_file $root/outputs/theme-exact-replacements/recovery-original-graphics-flash.bin
+set loader_file $root/work/theme-replacements/flash-sector-loader.bin
+set erased_file $root/work/theme-replacements/scratch-erased-4k.bin
+set pattern_file $root/work/theme-replacements/scratch-pattern-4k.bin
+set sector 0x3f0000
+
+proc read_register {name} {
+    set response [reg $name]
+    if {![regexp {0x[0-9a-fA-F]+} $response value]} {
+        error "Could not read $name: $response"
+    }
+    return $value
+}
+
+proc load_binary {path} {
+    set channel [open $path rb]
+    set bytes [read $channel]
+    close $channel
+    return $bytes
+}
+
+proc spi_transfer {byte} {
+    set available 0
+    for {set attempt 0} {$attempt < 1000} {incr attempt} {
+        if {![regexp {0x40014408: ([0-9a-fA-F]+)} [mdw 0x40014408 1] whole status]} {error "SPI2 status parse failed"}
+        scan $status %x parsed
+        if {($parsed & 2) != 0} {
+            set available 1
+            break
+        }
+    }
+    if {!$available} {error "SPI2 transmit timeout"}
+    mwh 0x4001440c $byte
+    set available 0
+    for {set attempt 0} {$attempt < 1000} {incr attempt} {
+        if {![regexp {0x40014408: ([0-9a-fA-F]+)} [mdw 0x40014408 1] whole status]} {error "SPI2 status parse failed"}
+        scan $status %x parsed
+        if {($parsed & 1) != 0} {
+            set available 1
+            break
+        }
+    }
+    if {!$available} {error "SPI2 receive timeout"}
+    if {![regexp {0x4001440c: ([0-9a-fA-F]+)} [mdh 0x4001440c 1] whole value]} {
+        error "SPI2 response parse failed"
+    }
+    mww 0x40003000 0xaaaa
+    scan $value %x parsed
+    return [expr {$parsed & 0xff}]
+}
+
+proc flash_command {opcode count} {
+    mww 0x40010828 0x100
+    set failed [catch {
+        spi_transfer $opcode
+        set answer {}
+        for {set index 0} {$index < $count} {incr index} {
+            lappend answer [spi_transfer 0xff]
+        }
+    } message]
+    catch {mww 0x40010818 0x100}
+    if {$failed} {error $message}
+    return $answer
+}
+
+proc flash_status {opcode} {return [lindex [flash_command $opcode 1] 0]}
+
+proc read_sector {base label} {
+    global scratch
+    set output ""
+    for {set index 0} {$index < 2} {incr index} {
+        mww 0x40003000 0xaaaa
+        reg r0 0x20001000
+        reg r1 [expr {$base + $index * 0x800}]
+        reg r2 0x800
+        reg lr 0x20000ff1
+        reg pc 0x080074c8
+        resume
+        wait_halt 7000
+        if {[read_register pc] != 0x20000ff0} {
+            error "Flash read stopped at an unexpected PC"
+        }
+        mww 0x40003000 0xaaaa
+        set part [format "%s/%s_%d.bin" $scratch $label $index]
+        dump_image $part 0x20001000 0x800
+        append output [load_binary $part]
+    }
+    if {[string length $output] != 0x1000} {
+        error "Incomplete flash read: [string length $output] bytes"
+    }
+    return $output
+}
+
+proc run_loader {payload_path} {
+    global loader_file sector
+    mww 0x40003000 0xaaaa
+    load_image $loader_file 0x20000000 bin
+    mww 0x40003000 0xaaaa
+    load_image $payload_path 0x20001000 bin
+    mww 0x40003000 0xaaaa
+    reg primask 1
+    reg r0 $sector
+    reg r1 0x20001000
+    reg sp 0x20000f00
+    reg lr 0x20000ff1
+    reg pc 0x20000000
+    resume
+    wait_halt 30000
+    if {[read_register pc] != 0x20000ff0} {
+        error "Sector loader stopped at an unexpected PC"
+    }
+    mww 0x40003000 0xaaaa
+    set result [read_register r0]
+    if {$result != 0} {
+        error "Sector loader returned error $result"
+    }
+}
+
+if {[info exists library_only] && $library_only == 1} {return}
+
+if {![info exists run_pilot] || $run_pilot != 1} {
+    echo "SECTOR_PILOT_DISABLED: set run_pilot 1 before loading this file"
+    shutdown
+}
+
+file mkdir $scratch
+if {[file size $loader_file] != 528 || [file size $original_file] != 0x400000 ||
+    [file size $erased_file] != 0x1000 || [file size $pattern_file] != 0x1000} {
+    error "Missing or unexpected loader/recovery file"
+}
+set source [open $original_file rb]
+seek $source $sector start
+set original [read $source 0x1000]
+close $source
+if {[string length $original] != 0x1000 || $original ne [load_binary $erased_file]} {
+    error "Scratch sector is not erased in the recovery image"
+}
+set payload [load_binary $pattern_file]
+if {[info exists preflight_only] && $preflight_only == 1} {
+    echo "SECTOR_PILOT_FILE_PREFLIGHT_OK"
+    shutdown
+}
+
+init
+bp 0x08001948 2 hw
+set connect_failed [catch {wait_halt 12000} connect_message]
+rbp 0x08001948
+if {$connect_failed != 0} {
+    echo "SECTOR_PILOT_NOT_STARTED $connect_message"
+    shutdown
+}
+
+set registers {r0 r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 sp lr pc xPSR primask}
+set snapshot_ready 0
+set snapshot_failed [catch {
+    foreach name $registers {
+        set saved_register($name) [read_register $name]
+    }
+    mww 0x40003000 0xaaaa
+    dump_image $scratch/ram-low.bin 0x20000000 0x1000
+    mww 0x40003000 0xaaaa
+    dump_image $scratch/ram-high.bin 0x20001000 0x1000
+    mww 0x40003000 0xaaaa
+    set snapshot_ready 1
+    mwh 0x20000ff0 0xbe00
+    reg primask 1
+    set before [read_sector $sector before]
+    if {$before ne $original} {
+        error "Live scratch sector differs from recovery image"
+    }
+    if {[flash_command 0x9f 3] ne {133 96 22} ||
+        [flash_status 0x05] != 0 || [flash_status 0x35] != 0 ||
+        [flash_status 0x15] != 0x20} {
+        error "Graphics flash ID, status, or configuration changed"
+    }
+    echo "SECTOR_PILOT_PREFLIGHT_OK"
+} snapshot_message]
+if {$snapshot_failed != 0} {
+    echo "SECTOR_PILOT_NOT_STARTED $snapshot_message"
+    if {$snapshot_ready != 0} {
+        set cleanup_failed [catch {
+            load_image $scratch/ram-low.bin 0x20000000 bin
+            mww 0x40003000 0xaaaa
+            load_image $scratch/ram-high.bin 0x20001000 bin
+            foreach name $registers {reg $name $saved_register($name)}
+        } cleanup_message]
+        if {$cleanup_failed != 0} {echo "SECTOR_PILOT_PREFLIGHT_CLEANUP_ERROR $cleanup_message"}
+    }
+    catch {resume}
+    shutdown
+}
+
+set write_attempted 0
+set pilot_failed [catch {
+    set write_attempted 1
+    run_loader $pattern_file
+    set programmed [read_sector $sector programmed]
+    if {$programmed ne $payload} {
+        error "Full-sector program readback differs from staged pattern"
+    }
+    if {[flash_status 0x05] != 0 || ([flash_status 0x35] & 4) != 0} {
+        error "Graphics flash reported a program/erase error"
+    }
+    echo "SECTOR_PILOT_PROGRAM_VERIFIED"
+} pilot_message]
+
+set restore_failed 0
+if {$write_attempted != 0} {
+    set restore_failed [catch {
+        set deadline [expr {[clock milliseconds] + 30000}]
+        while {([flash_status 0x05] & 1) != 0} {
+            if {[clock milliseconds] >= $deadline} {error "Flash stayed busy before restoration"}
+        }
+        flash_command 0x04 0
+        run_loader $erased_file
+        set restored [read_sector $sector restored]
+        if {$restored ne $original} {
+            error "Full-sector restoration readback differs from recovery image"
+        }
+        if {[flash_status 0x05] != 0 || ([flash_status 0x35] & 4) != 0} {
+            error "Graphics flash reported an error after restoration"
+        }
+        echo "SECTOR_PILOT_RESTORED"
+    } restore_message]
+}
+
+set ram_restore_failed [catch {
+    mww 0x40003000 0xaaaa
+    load_image $scratch/ram-low.bin 0x20000000 bin
+    mww 0x40003000 0xaaaa
+    load_image $scratch/ram-high.bin 0x20001000 bin
+    mww 0x40003000 0xaaaa
+    foreach name $registers {
+        reg $name $saved_register($name)
+    }
+} ram_restore_message]
+if {$pilot_failed != 0} {echo "SECTOR_PILOT_ERROR $pilot_message"}
+if {$restore_failed != 0} {echo "SECTOR_PILOT_RESTORE_ERROR $restore_message"}
+if {$ram_restore_failed != 0} {
+    echo "SECTOR_PILOT_RAM_RESTORE_ERROR $ram_restore_message"
+    catch {reset run}
+    shutdown
+}
+resume
+shutdown
