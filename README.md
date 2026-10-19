@@ -141,6 +141,12 @@ The individual [bright](artwork/assets/day-normal.png) and [dim](artwork/assets/
 
 *All figures are host-generated Epsilon previews. Playback uses an illustrative 80 ms/frame; actual hardware timing has not been measured. The animated telemetry bars are decorative, not additional sensor readings.*
 
+## How the remaining-liquid indicator works
+
+Further analysis of the saved `0210V9` firmware shows that the liquid ring is a **software usage estimate based on firing time**. At the end of an ordinary puff, Normal adds the measured duration to a usage total; Boost adds that duration multiplied by **1.67**, converted to an integer. Longer puffs therefore count more than shorter puffs in the same mode.
+
+The firmware selects one of seven liquid-icon stages from that total and saves the usage record at external-flash offset `0x3FF000`. The traced gauge path does not read a liquid-level sensor. The archived record represents weighted usage units, not a lifetime puff count. The [usage-meter analysis](USAGE-METER.md) gives the addresses, thresholds, byte encoding, and limits of the evidence. These are offline firmware findings; timed live-puff and liquid-volume tests have not been performed.
+
 ## Writing and checking the theme
 
 We built a candidate by copying the original flash image and patching only the mapped bitmap ranges. The first eight bytes and everything from `0x3E5C68` onward remained unchanged. This preserved unclassified data instead of treating the whole chip as disposable image storage.
@@ -175,7 +181,7 @@ The included Epsilon v2 artwork incorporates the same original fill direction: c
 - Keep the existing MCU program, unknown flash regions, original backups, and a recoverable per-sector record. A matching exterior is insufficient reason to run another model's firmware.
 - OpenOCD's Jim Tcl did not accept our initial `fconfigure -encoding` / `binary format` approach. Generating binary payloads on the host and using raw `rb` / `wb` file operations worked.
 
-The remaining research is to confirm the physical part markings and board revision, identify the unclassified flash data, and test additional firmware revisions. These findings document a completed retheme on one unit, with enough addresses, source references, and evidence for others to investigate their own devices without assuming they are identical.
+The remaining research is to confirm the physical part markings and board revision, identify the rest of the unclassified flash data, calibrate the usage estimate against live operation, and test additional firmware revisions. These findings document a completed retheme on one unit, with enough addresses, source references, and evidence for others to investigate their own devices without assuming they are identical.
 
 ## Files and acknowledgments
 
@@ -185,5 +191,6 @@ The remaining research is to confirm the physical part markings and board revisi
 - [Implementation reference snapshots](reference/README.md)
 - [Epsilon example artwork and validation](artwork/README.md)
 - [Six-sector liquid-indicator update](SELECTIVE-UPDATE.md)
+- [Duration-based liquid estimate and saved usage record](USAGE-METER.md)
 
 Thanks to **ginbot86**, **xbenkozx**, **ImoverEngineering**, the **DAP Link/Free-DAP contributors**, and the **OpenOCD and Ghidra projects**. This work builds on their documentation and tools. The upstream projects retain their own licenses. This repository contains no stock MCU firmware or full graphics-flash image. Epsilon artwork is provided as the visual example; no blanket license for upstream software or character artwork is implied.

@@ -104,6 +104,12 @@ On a write/readback error, the controller attempted to restore the original curr
 
 The scratch round trips preceded the artwork write. The live full run required no recovery. Offline tests exercised deliberately bad readback, interrupted-sector recovery, and resume after a verified batch; they did not simulate every real MCU/peripheral or power-loss behavior.
 
+## Liquid-usage state in the graphics chip
+
+The final graphics-flash sector is not entirely artwork or unused padding. For the captured firmware, `0x08005388` saves a little-endian 32-bit weighted firing-duration total followed by marker `0xBB` at external offset `0x3FF000`; `0x08004850` restores it. The liquid gauge derives seven icon stages from this total, with Normal duration weighted by 1 and Boost duration by 1.67. See [USAGE-METER.md](USAGE-METER.md) for the complete trace, SRAM fields, thresholds and unverified event-counter candidate.
+
+This identification comes from offline inspection of the existing captures. The ordinary retheme preserved this sector, and no usage-counter modification or new live test was performed for the analysis.
+
 ## Reference versus reusable tooling
 
 The `.cfg.txt` snapshots preserve the tested control flow with host paths/adapter identity redacted and theme paths/log prefixes normalized. They retain the exact backup/candidate hashes of the earlier hardware-tested theme; those hashes do not describe the Epsilon artwork. They are supplied so other researchers can inspect the control flow. A reusable tool would need configuration, firmware verification, reviewed error handling, and validation on its intended target. Do not remove the input checks merely to make an unfamiliar dump pass.

@@ -39,12 +39,20 @@ The final candidate contains 186 bitmap replacements and differs from the origin
 
 All candidate differences fall inside the mapped image range. The first eight bytes, the area after `0x3E5C68`, the scratch sector, and the final sector were preserved in the candidate. This is a host comparison of original versus candidate. The live write verification was each changed sector's complete readback against that candidate.
 
+## Later offline analysis of the usage meter
+
+The [usage-meter report](USAGE-METER.md) traces the captured MCU firmware's active-puff timer, Normal/Boost accounting, liquid-icon selection, and five-byte persistent record. The input firmware and graphics-dump hashes are the same original capture hashes listed above. The state-dispatch table resolves the previously unexported active-puff handler at `0x08007958`.
+
+Direct checks against the saved bytes confirmed the Boost double constant of 1.67 at MCU address `0x08007A60`, selector constants 340000 and 60000, and external record `59 B2 02 00 BB` at `0x3FF000`. The record decodes to 176729 weighted usage units and selects liquid stage 4. These are archived bytes, not a new or current device reading. The timer and completed-puff code explain why the total depends on duration and mode rather than a fixed allowance for every puff.
+
+Ghidra opened the existing Cortex/Thumb analysis project in read-only mode and discarded temporary analysis changes. No live device was accessed and no counter, firmware or graphics data was written. Timed-puff behavior and real liquid-volume accuracy have not been measured independently. A separate 16-bit event-counter candidate remains unverified as a lifetime puff count.
+
 ## Limits of this evidence
 
 - One device and one captured firmware revision were tested. Exterior product identification does not confirm the physical board revision or component package markings.
 - The owner checked the earlier theme's behavior and appearance. Published Epsilon previews are offline examples, not photos of that result. Epsilon's validation record is [separate](evidence/epsilon-v2-offline-verification.json).
 - No independent second full-chip dump or post-write MCU firmware dump was made after programming. The method wrote only external flash, and every changed sector was read back, but those separate whole-device checks were not performed.
-- The meaning of unclassified external-flash bytes was not fully reverse engineered. They were preserved rather than called unused.
+- The later usage analysis identifies the five-byte record at `0x3FF000`; the rest of the unclassified external-flash bytes remain incompletely understood. The retheme preserved those regions rather than calling them unused.
 - The scratch sector was erased in this capture and checked live before use; that does not prove another device never uses it.
 - Simulated recovery tests validate controller branches, not immunity to real cable/power faults. The journal and rollback are best effort.
 - Ordinary operation after flashing was checked; long-term reliability and additional hardware revisions were not tested.
