@@ -8,9 +8,9 @@ This repository illustrates the method with **Epsilon Gyro**, an original charac
 
 ![Epsilon Gyro screens and gauge states](images/epsilon-states.png)
 
-*The Epsilon artwork is an offline example and has not been flashed or checked on the device. The hardware method was successfully tested with an earlier custom theme: complete sector readbacks and owner checks covered its settings screen, animation, mode changes, and normal button response. Those hardware results do not constitute an Epsilon hardware test.*
+*The Epsilon previews shown here were generated offline. After this guide's original one-device test, we installed and checked Epsilon on a second vape; see the [second-device addendum](SECOND-DEVICE.md). The original test and the second installation have separate evidence.*
 
-This report documents **one device with the version screen `GV2025 / 0210V9`**, tested on October 18, 2026. Its exterior matches the RAZ LTX 25K / DC25000 Punch Edition. We never opened the case, so the PCB revision, MCU part marking, display controller, and flash package suffix remain unverified. The addresses below belong to this firmware capture; the product name or an SWD response alone does not establish compatibility.
+This main walkthrough documents **the first device with the version screen `GV2025 / 0210V9`**, tested on October 18, 2026. The [addendum](SECOND-DEVICE.md) compares a second device captured and rethemed on October 19. The first unit's exterior matches the RAZ LTX 25K / DC25000 Punch Edition. We never opened either case, so PCB revisions, MCU part markings, display controllers, and flash package suffixes remain unverified. The addresses below belong to the first firmware capture; the product name or an SWD response alone does not establish compatibility.
 
 ## Where this work starts
 
@@ -181,7 +181,7 @@ The included Epsilon v2 artwork incorporates the same original fill direction: c
 - Keep the existing MCU program, unknown flash regions, original backups, and a recoverable per-sector record. A matching exterior is insufficient reason to run another model's firmware.
 - OpenOCD's Jim Tcl did not accept our initial `fconfigure -encoding` / `binary format` approach. Generating binary payloads on the host and using raw `rb` / `wb` file operations worked.
 
-The remaining research is to confirm the physical part markings and board revision, identify the rest of the unclassified flash data, calibrate the usage estimate against live operation, and test additional firmware revisions. These findings document a completed retheme on one unit, with enough addresses, source references, and evidence for others to investigate their own devices without assuming they are identical.
+The remaining research is to confirm the physical part markings and board revisions, identify the rest of the unclassified flash data, calibrate the usage estimate against live operation, and test more firmware revisions. This walkthrough documents the first unit; the [second-device addendum](SECOND-DEVICE.md) records the separate comparison and Epsilon installation without assuming all similar-looking vapes are identical.
 
 ## Files and acknowledgments
 
@@ -192,5 +192,6 @@ The remaining research is to confirm the physical part markings and board revisi
 - [Epsilon example artwork and validation](artwork/README.md)
 - [Six-sector liquid-indicator update](SELECTIVE-UPDATE.md)
 - [Duration-based liquid estimate and saved usage record](USAGE-METER.md)
+- [Second-device firmware comparison and Epsilon installation](SECOND-DEVICE.md)
 
 Thanks to **ginbot86**, **xbenkozx**, **ImoverEngineering**, the **DAP Link/Free-DAP contributors**, and the **OpenOCD and Ghidra projects**. This work builds on their documentation and tools. The upstream projects retain their own licenses. This repository contains no stock MCU firmware or full graphics-flash image. Epsilon artwork is provided as the visual example; no blanket license for upstream software or character artwork is implied.

@@ -1,6 +1,6 @@
 # Capture and verification record
 
-Tested October 18, 2026 on one unopened device showing `GV2025 / 0210V9`. This record describes an earlier hardware-tested custom theme. The repository's Epsilon artwork is a separate offline example and has not been flashed. Project-specific names and log prefixes are normalized to `THEME`; numerical evidence is preserved.
+Tested October 18, 2026 on one unopened device showing `GV2025 / 0210V9`. This record describes an earlier hardware-tested custom theme. The Epsilon artwork was an offline example at the time of this test; it was subsequently installed on a second device, documented in the [second-device addendum](SECOND-DEVICE.md). Project-specific names and log prefixes are normalized to `THEME`; numerical evidence is preserved.
 
 ## Captures and build
 
@@ -49,8 +49,8 @@ Ghidra opened the existing Cortex/Thumb analysis project in read-only mode and d
 
 ## Limits of this evidence
 
-- One device and one captured firmware revision were tested. Exterior product identification does not confirm the physical board revision or component package markings.
-- The owner checked the earlier theme's behavior and appearance. Published Epsilon previews are offline examples, not photos of that result. Epsilon's validation record is [separate](evidence/epsilon-v2-offline-verification.json).
+- This original test covered one device and one captured firmware revision; the later [second-device addendum](SECOND-DEVICE.md) has its own comparison and installation record. Exterior product identification does not confirm physical board revisions or component package markings.
+- The owner checked the earlier theme's behavior and appearance. Published Epsilon previews are host-generated, not photos of that first result. Epsilon's offline validation record is [separate](evidence/epsilon-v2-offline-verification.json), as is its later [second-device installation](SECOND-DEVICE.md).
 - No independent second full-chip dump or post-write MCU firmware dump was made after programming. The method wrote only external flash, and every changed sector was read back, but those separate whole-device checks were not performed.
 - The later usage analysis identifies the five-byte record at `0x3FF000`; the rest of the unclassified external-flash bytes remain incompletely understood. The retheme preserved those regions rather than calling them unused.
 - The scratch sector was erased in this capture and checked live before use; that does not prove another device never uses it.

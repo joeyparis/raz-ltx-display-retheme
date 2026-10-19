@@ -4,7 +4,7 @@ Epsilon is an original floating orb character. This v2 theme uses the existing 2
 
 ![Epsilon overview](../images/epsilon-states.png)
 
-These are **offline assets**, not a theme that has been installed or tested on hardware. The hardware evidence elsewhere describes an earlier custom theme used to establish the method. Actual Epsilon screen readability and animation timing remain unverified.
+These PNGs and GIFs are **host-generated assets**. The earlier custom theme established the hardware method; Epsilon was subsequently installed on a [second device](../SECOND-DEVICE.md). Its owner confirmed the menu and puff animations in Normal and Boost, while exact on-device animation timing remains unmeasured.
 
 ## Files and encoding
 

@@ -1,6 +1,6 @@
 # Six-sector liquid-indicator update
 
-After the full custom-theme transfer, we corrected its liquid-ring direction to match the original design: counterclockwise from the upper-left. This was a hardware update to the earlier theme. The Epsilon v2 images published here incorporate the same direction but have only been validated offline.
+After the full custom-theme transfer, we corrected its liquid-ring direction to match the original design: counterclockwise from the upper-left. This was a hardware update to the earlier theme. The Epsilon v2 images published here incorporate the same direction. They were validated offline as a separate payload before their later [installation on a second device](SECOND-DEVICE.md).
 
 ## Scope and evidence
 
@@ -23,4 +23,4 @@ The owner checked the settings screen and corrected ring afterward and reported:
 
 ## Keeping the two artwork records separate
 
-The hardware-tested correction changed 1,552 pixel bytes. The [Epsilon v2 offline correction](evidence/epsilon-v2-offline-verification.json) changed 2,100 bytes compared with Epsilon v1. Both touch the same ten image slots and six sectors, but their pixel content differs. The old candidate hashes, 998-sector full transfer, and six-sector live update must not be presented as Epsilon hardware verification.
+The hardware-tested correction changed 1,552 pixel bytes. The [Epsilon v2 offline correction](evidence/epsilon-v2-offline-verification.json) changed 2,100 bytes compared with Epsilon v1. Both touch the same ten image slots and six sectors, but their pixel content differs. The old candidate hashes, 998-sector full transfer, and six-sector live update are not Epsilon hardware verification; the [second-device record](SECOND-DEVICE.md) documents that separate installation.
