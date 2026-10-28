@@ -1,0 +1,81 @@
+{
+  "table_address": "0x08007fb8",
+  "entries": [
+    {
+      "state": 0,
+      "thumb_pointer": "0x80070f5",
+      "handler": "0x80070f4"
+    },
+    {
+      "state": 1,
+      "thumb_pointer": "0x80030cd",
+      "handler": "0x80030cc"
+    },
+    {
+      "state": 2,
+      "thumb_pointer": "0x8007b71",
+      "handler": "0x8007b70"
+    },
+    {
+      "state": 3,
+      "thumb_pointer": "0x8007a61",
+      "handler": "0x8007a60"
+    },
+    {
+      "state": 4,
+      "thumb_pointer": "0x8007e29",
+      "handler": "0x8007e28"
+    },
+    {
+      "state": 5,
+      "thumb_pointer": "0x8007e65",
+      "handler": "0x8007e64"
+    },
+    {
+      "state": 6,
+      "thumb_pointer": "0x8007f85",
+      "handler": "0x8007f84"
+    },
+    {
+      "state": 7,
+      "thumb_pointer": "0x8007ef9",
+      "handler": "0x8007ef8"
+    },
+    {
+      "state": 8,
+      "thumb_pointer": "0x80066cd",
+      "handler": "0x80066cc"
+    },
+    {
+      "state": 9,
+      "thumb_pointer": "0x8006641",
+      "handler": "0x8006640"
+    },
+    {
+      "state": 10,
+      "thumb_pointer": "0x8006251",
+      "handler": "0x8006250"
+    },
+    {
+      "state": 11,
+      "thumb_pointer": "0x80073a9",
+      "handler": "0x80073a8"
+    },
+    {
+      "state": 12,
+      "thumb_pointer": "0x80068b1",
+      "handler": "0x80068b0"
+    },
+    {
+      "state": 13,
+      "thumb_pointer": "0x8006ecd",
+      "handler": "0x8006ecc"
+    },
+    {
+      "state": 14,
+      "thumb_pointer": "0x8006995",
+      "handler": "0x8006994"
+    }
+  ],
+  "meaning": "Raw recovered dispatch entries; not an exhaustive behavioral model"
+}

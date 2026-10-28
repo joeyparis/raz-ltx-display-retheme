@@ -12,6 +12,12 @@ This repository illustrates the method with **Epsilon Gyro**, an original charac
 
 This main walkthrough documents **the first device with the version screen `GV2025 / 0210V9`**, tested on October 18, 2026. The [addendum](SECOND-DEVICE.md) compares a second device captured and rethemed on October 19. The first unit's exterior matches the RAZ LTX 25K / DC25000 Punch Edition. We never opened either case, so PCB revisions, MCU part markings, display controllers, and flash package suffixes remain unverified. The addresses below belong to the first firmware capture; the product name or an SWD response alone does not establish compatibility.
 
+## Third-device compatibility update
+
+A third unit captured on October 28 has a substantially revised display implementation: a shared 54-frame puff sequence, 29-frame menu strips, a dedicated off-state charging screen with battery percentage, larger shared gauges and partial menu redraws. Its five-click-off transition also adds an explicit heater-stop/reset step. The inspected controls and duration-weighted liquid accounting remain consistent with the earlier firmware.
+
+Read the [third-device firmware and feature comparison](THIRD-DEVICE.md) for function addresses, capture hashes, the new asset map and unresolved questions. **The earlier theme files and firmware helper addresses are not drop-in compatible with that revision.** The third device was backed up and analyzed without programming flash; it has not received the Epsilon theme. The first-device walkthrough below remains specific to its captured firmware.
+
 ## Where this work starts
 
 The starting points were [ginbot86's ColorLCDVape-RE](https://github.com/ginbot86/ColorLCDVape-RE/blob/main/docs/KrazeHD7K-RazTN9000.md), [xbenkozx's RAZ-RE](https://github.com/xbenkozx/RAZ-RE), and [ImoverEngineering's Vaporware wiring guide](https://github.com/ImoverEngineering/Vaporware/blob/main/docs/WIRING.md). Those projects documented the hardware family, raw display assets, and the useful USB-C debug connection. Their authors deserve the credit for that foundation.
@@ -193,5 +199,6 @@ The remaining research is to confirm the physical part markings and board revisi
 - [Six-sector liquid-indicator update](SELECTIVE-UPDATE.md)
 - [Duration-based liquid estimate and saved usage record](USAGE-METER.md)
 - [Second-device firmware comparison and Epsilon installation](SECOND-DEVICE.md)
+- [Third-device features, procedure changes and revised asset map](THIRD-DEVICE.md)
 
 Thanks to **ginbot86**, **xbenkozx**, **ImoverEngineering**, the **DAP Link/Free-DAP contributors**, and the **OpenOCD and Ghidra projects**. This work builds on their documentation and tools. The upstream projects retain their own licenses. This repository contains no stock MCU firmware or full graphics-flash image. Epsilon artwork is provided as the visual example; no blanket license for upstream software or character artwork is implied.
